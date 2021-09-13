@@ -25,7 +25,7 @@ class Post(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES,
                               default='draft')
     objects = models.Manager()
-    publish = PublishedManager()
+    published = PublishedManager()
 
     class Meta:
         ordering = ('-publish',)
