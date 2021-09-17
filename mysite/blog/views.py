@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
 from django.core.mail import send_mail
+from django.db.models import Count
 from taggit.models import Tag
 from .models import Post, Comment
 from .forms import EmailPostForm, CommentForm
@@ -21,6 +22,7 @@ class PostListView(ListView):
         return queryset
 '''
 
+
 def post_share(request, post_id):
     post = get_object_or_404(Post, id=post_id, status='published')
     sent = False
@@ -36,17 +38,17 @@ def post_share(request, post_id):
                                                                 post_url,
                                                                 cd['name'],
                                                                 cd['comments'])
-            #send_mail(subject, message, 'admin@myblog.com', [cd['to'],], fail_silently=False)
+
             send_mail(
-                        'Subject here',
-                        'Here is the message.',
-                        'from@example.com',
-                        ['to@example.com'],
-                        fail_silently=False,
-                    )
+                subject,
+                message,
+                'admin@myblog.com',
+                [cd['to']],
+                fail_silently=False,
+            )
             sent = True
         return render(request, 'blog/post/share.html',
-                  {'post': post, 'form': form, 'sent': sent})
+                      {'post': post, 'form': form, 'sent': sent})
     form = EmailPostForm()
     return render(request, 'blog/post/share.html',
                   {'post': post, 'form': form, 'sent': sent})
@@ -94,6 +96,15 @@ def post_detail(request, year, month, day, post):
             new_comment.save()
             new_comment = True
     comment_form = CommentForm()
+    post_tags_ids = post.tags.values_list('id', flat=True)
+    similar_posts = Post.published.filter(tags__in=post_tags_ids)\
+                                  .exclude(id=post.id)
+    similar_posts = similar_posts.annotate(same_tags=Count('tags'))\
+                                 .order_by('-same_tags', '-publish')[:4]
+
+
     return render(request, 'blog/post/detail.html',
                   {'post': post, 'comments': comments,
-                   'new_comment': new_comment, 'comment_form': comment_form})
+                   'new_comment': new_comment,
+                   'comment_form': comment_form,
+                   'similar_posts': similar_posts})
