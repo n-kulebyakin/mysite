@@ -12,9 +12,7 @@
         <h2>Similar posts</h2>
     {% endif %}
     {% for similar in similar_posts %}
-        <p>
             <a href="{% url "blog:post_detail" similar.publish.year similar.publish.month similar.publish.day similar.slug %}">{{ similar.title }}</a>
-        </p>
     {% endfor %}
     {% with comments.count as total_comments %}
         <h2>{{ total_comments }} comment {{ total_comments|pluralize}}</h2>
